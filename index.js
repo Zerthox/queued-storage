@@ -6,11 +6,11 @@ class QueuedStorage {
 		this.queue = {};
 	}
 
-	read(file, options = {}) {
+	read(path, options = {}) {
 		return new Promise((resolve, reject) => {
 			const {queue} = this;
-			if (queue[file] && queue[file].entries.length > 0) {
-				const buffered = Buffer.from(queue[file].entries[queue[file].entries.length - 1].contents);
+			if (queue[path] && queue[path].entries.length > 0) {
+				const buffered = Buffer.from(queue[path].entries[queue[path].entries.length - 1].data);
 				if (typeof options === "string") {
 					resolve(buffered.toString(options));
 				}
@@ -22,7 +22,7 @@ class QueuedStorage {
 				}
 			}
 			else {
-				readFile(file, options, (err, data) => {
+				readFile(path, options, (err, data) => {
 					if (err) {
 						reject(err);
 					}
@@ -34,32 +34,33 @@ class QueuedStorage {
 		});
 	}
 
-	write(file, contents, options = {}) {
+	write(path, data, options = {}) {
 		return new Promise((resolve, reject) => {
 			const {queue} = this;
-			if (!queue[file]) {
-				queue[file] = {
+			if (!queue[path]) {
+				queue[path] = {
 					pending: false,
 					entries: []
 				};
 			}
-			if (queue[file] && queue[file].pending) {
-				queue[file].entries.push({contents, options, resolve, reject});
+			const file = queue[path];
+			if (file.pending) {
+				file.entries.push({data, options, resolve, reject});
 			}
 			else {
-				queue[file].pending = true;
-				queue[file].entries.push({contents, resolve, reject});
-				writeFile(file, contents, options, (err) => {
-					queue[file].entries.shift();
+				file.pending = true;
+				file.entries.push({data, resolve, reject});
+				writeFile(path, data, options, (err) => {
+					file.entries.shift();
 					if (err) {
 						reject(err);
 					}
 					else {
 						resolve();
-						queue[file].pending = false;
-						if (queue[file].entries.length > 0) {
-							const {contents, resolve, reject} = queue[file].entries.shift();
-							this.write(file, contents, options).then(() => resolve(), (err) => reject(err));
+						file.pending = false;
+						if (file.entries.length > 0) {
+							const {data, resolve, reject} = file.entries.shift();
+							this.write(path, data, options).then(() => resolve(), (err) => reject(err));
 						}
 					}
 				});
