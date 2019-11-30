@@ -59,7 +59,7 @@ class QueuedStorage {
 						resolve();
 						file.pending = false;
 						if (file.entries.length > 0) {
-							const {data, resolve, reject} = file.entries.shift();
+							const {data, options, resolve, reject} = file.entries.shift();
 							this.write(path, data, options).then(() => resolve(), (err) => reject(err));
 						}
 					}
