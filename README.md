@@ -1,2 +1,2 @@
-# queued-storage
-Small queue-based storage implementation for NodeJS.
+# QueuedStorage
+Small queue-based storage implementation for [Node.js](https://nodejs.org).
